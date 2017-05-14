@@ -2,11 +2,26 @@
 % Please edit documentation in R/heartRacer.R
 \name{heartRace}
 \alias{heartRace}
-\title{Awesome function for being awesome}
+\title{Animate fit files onto google maps}
 \usage{
-heartRace(recordList, zoom = 14, use_rgoogs = F, use_ggmap = T,
-  map_type = "terrain", nudgeLatBy = 0, nudgeLonBy = 0)
+heartRace(recordList, zoom = 14, map_type = "satellite", nudgeLatBy = 0,
+  nudgeLonBy = 0)
+}
+\arguments{
+\item{recordList}{A list of records from fit file}
+
+\item{zoom}{Zoom option for google maps}
+
+\item{map_type}{Type of map pulled from google maps}
+
+\item{nudgeLatBy}{How much should each subject's latitude be moved by?}
+
+\item{nudgeLonBy}{How much should each subject's longitude be moved by?}
 }
 \description{
-Awesome function for being awesome
+Animate fit files onto google maps
+}
+\details{
+Returns a ggplot object with the work out plotted on top of it. This can be animated
+by using \code{gganimate::gganimate(hrMap)}, where \code{hrMap} is an object returned by heartRace.
 }

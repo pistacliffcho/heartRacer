@@ -63,44 +63,19 @@ load_fits <- function(filesLocation = "~/Documents/fitFiles",
 
 
 
-animate2d <- function(fit){
-  record <- fit$record[,c("timestamp", 
-                          "position_lat", 
-                          "position_long",
-                          "heart_rate")]
-  has_na <- rowSums(is.na(record) ) > 0
-  record <- record[!has_na, ]
-  time <- record$timestamp
-  time <- time - min(time)
-  grid <- 1:round(max(time/6) - 1 ) * 6 
-  
-  raw_lat <- record$position_lat
-  lat = approx(x = time, y = record$position_lat, 
-               xout = grid)$y
-  lon = approx(x = time, y = record$position_long, 
-               xout = grid)$y
-  hr  = approx(x = time, y = record$heart_rate, 
-               xout = grid)$y
-  hr_col = rep('black', length(hr))
-  hr_col[hr > 110] <- 'darkblue'
-  hr_col[hr > 130] <- 'purple'
-  hr_col[hr > 150] <- 'orange'
-  hr_col[hr > 165] <- 'red'
-  
-  plot(NA, xlim = range(lon), ylim = range(lat), 
-       xlab = 'Longitude', ylab = 'Latitude')
-  
-  for(i in seq_along(grid)){
-    points(lon[i], lat[i], col = hr_col[i], pch = 16, cex = .75)
-    Sys.sleep(0.1)
-  }
-}
 
 hrCuts <- list(`HR <= 110` = list(0, 'darkgrey'), 
                `110 < HR <= 130` = list(110, 'lightblue'), 
                `130 < HR <= 145` = list(130, 'green'), 
                `145 < HR <= 160` = list(145, 'orange'), 
                 `HR > 160` = list(160, 'red'))
+
+getHR_cols <- function(hrCuts){
+  ans <- NULL
+  for(i in seq_along(hrCuts)) ans[i] = hrCuts[[i]][[2]]
+  return(ans)
+}
+
 
 guess_lgd_location <- function(x, y){
   x_rng <- range(x)
@@ -142,114 +117,31 @@ hr2col = function(hr){
   return(ans)
 }
 
-
-
-#' Animate points for group of subjects
-#' 
-#' @param x Longitude
-#' @param y Latitude
-#' @param time Time is seconds. Should be minimized to 0
-#' @param hrtRt Heart Rate
-#' @param id Id correpsonding to other variables
-#' @param speed_up How much faster should animation run than in reality?
-#' @param ptsPerSec How many points plotted per second?
-#' @param ani Is this an animation?
-#' @param lgdLocation Where onshould the legend be plotted?
-#' @param googMap Google map object to be plotted on
-#' @param ... arguments that will be ignored. Only for compatibility with \code{RgoogleMaps::plotmap}
-#' @export
-race_points <- function(x, y, time, hrtRt, id, 
-                        speed_up = 120, ptsPerSec = 3,
-                        ani = TRUE, lgdLocation = NULL, googMap = NULL,
-                        ggmap = NULL,
-                        ...){
-  useGoog = TRUE
-  use_ggmap = TRUE
-  if(is.null(googMap)) useGoog = FALSE
-  if(is.null(use_ggmap)) use_ggmap = FALSE
-  if(is.null(lgdLocation)) lgdLocation = guess_lgd_location(x, y)
-  hr <- hrtRt
-  ptsPrSec = 3
-  time_rng <- range(time)
-  time_spn <- time_rng[2] - time_rng[1]
-  grid     <- (1:(round(time_spn / speed_up * ptsPrSec))) * speed_up / ptsPrSec
-  
-  unq_id = unique(id)
-  grd_vals = list()
-  for(i in seq_along(unq_id)){
-    this_id = unq_id[i]
-    id_ind  = id == this_id
-    this_time = time[id_ind]
-    this_lon = approx(this_time, x[id_ind], grid)$y
-    this_lat = approx(this_time, y[id_ind], grid)$y
-    this_hr  = approx(this_time, hr[id_ind], grid)$y
-    this_data <- data.frame(time  = grid, 
-                            lon   = this_lon, 
-                            lat   = this_lat, 
-                            hrCol = hr2col(this_hr), 
-                            stringsAsFactors = F)
-    grd_vals[[i]] <- this_data
+ls_approx <- function(x, y, eval_pts){
+  span = 0.05
+  if(length(x) < 100){
+    span = 0.25
   }
-  
-  saveGIF(movie.name = "~/Documents/heartRace.gif", expr = {
-    ani.options(interval = 0.1, nmax = length(grid))
-    
-    for(i in seq_along(grid)){
-      if(!useGoog){
-        plot(x, y, col = NA, 
-             xlab = "Longitude", 
-             ylab = 'Latitude')
-      }
-       else{ 
-         map <- PlotOnStaticMap(googMap) 
-       }
-      if(!is.na(lgdLocation) & !useGoog){ 
-        makeHRLegend(unq_id, lgdLocation) 
-      }
-      for(j in seq_along(unq_id)){
-        df <- grd_vals[[j]]
-        plot_list <- list(x = df$lon[1:i], 
-                          y = df$lat[1:i], 
-                          pch = j, 
-                          col = df$hrCol[1:i], 
-                          lwd = 2, 
-                          cex = .75)
-        if(!useGoog) do.call(colored_lines, plot_list)
-        if(useGoog){
-          plot_list$FUN = colored_lines
-          plot_list$MyMap = googMap
-          plot_list$lat = df$lat[1:i]
-          plot_list$lon = df$lon[1:i]
-#          plot_list$add = TRUE
-          do.call(PlotOnStaticMap, plot_list)
-        }
-        if(i > 10){
-          p_max_ind = floor(i / 10)
-          p_inds <- 1:p_max_ind * 10
-          plot_list <- list(x = df$lon[p_inds], 
-                        y = df$lat[p_inds], 
-                        pch = j, 
-                        col = df$hrCol[p_inds], 
-                        lwd = 2, 
-                        cex = 1.5)
-          if(!useGoog) do.call(points, plot_list)
-          # if(useGoog){
-          #   plot_list$FUN = points
-          #   plot_list$MyMap = map
-          #   do.call(PlotOnStaticMap, plot_list)
-          # }
-        }
-      }
-    ani.pause()
-    }
-  })
+  fit <- loess(y ~ x, span = span)
+  yhats <- predict(fit, data.frame(x = eval_pts))
+  ans <- data.frame(x = eval_pts, y = yhats)
+  return(ans)
 }
 
-#' Awesome function for being awesome
+
+#' Animate fit files onto google maps
+#' @param recordList A list of records from fit file
+#' @param zoom Zoom option for google maps
+#' @param map_type Type of map pulled from google maps
+#' @param nudgeLatBy How much should each subject's latitude be moved by? 
+#' @param nudgeLonBy How much should each subject's longitude be moved by?
+#' @details 
+#' Returns a ggplot object with the work out plotted on top of it. This can be animated
+#' by using \code{gganimate::gganimate(hrMap)}, where \code{hrMap} is an object returned by heartRace. 
 #' @export
 heartRace <- function(recordList, 
                       zoom = 14, 
-                      map_type = 'terrain', 
+                      map_type = 'satellite', 
                       nudgeLatBy = 0,
                       nudgeLonBy = 0
                       ){
@@ -339,7 +231,7 @@ plotMyRun <- function(fit_file, zoom = 14,
 #' @param rcd A record from 
 #' @export
 add_gg_run <- function(gmap, rcd, size = 1, pch = 1){
-  these_cols <- as.character(rcd$hrCol)
+  these_cols <- as.character(rcd$HeartRate)
   gmap + geom_point(data = rcd,
                     aes(x = position_long,
                         y = position_lat),
@@ -378,14 +270,14 @@ gg_race_points <- function(x, y, time, hrtRt, id,
     this_id = unq_id[i]
     id_ind  = id == this_id
     this_time = time[id_ind]
-    this_lon = approx(this_time, x[id_ind], grid)$y
-    this_lat = approx(this_time, y[id_ind], grid)$y
-    this_hr  = approx(this_time, hr[id_ind], grid)$y
+    this_lon = ls_approx(this_time, x[id_ind], grid)$y
+    this_lat = ls_approx(this_time, y[id_ind], grid)$y
+    this_hr  = ls_approx(this_time, hr[id_ind], grid)$y
     this_data <- data.frame(time  = grid,
                             lon   = this_lon,
                             lat   = this_lat,
-                            hrCol = hr2col(this_hr),
-                            stringsAsFactors = F, 
+                            HeartRate = hr2col(this_hr),
+                            stringsAsFactors = T, 
                             id = this_id)
     grd_vals[[i]] <- this_data
   }
@@ -410,9 +302,10 @@ gg_race_points <- function(x, y, time, hrtRt, id,
               geom_segment(data = df, 
                           aes(x = lon, xend = lon_end, 
                               y = lat, yend = lat_end,
+                              group = id,
+                              color = HeartRate,
                               frame = time,
                               cumulative = TRUE),
-                         col = df$hrCol, 
                          size = 1.5) 
     pts_delay = 20
     if(nrow(df) > pts_delay){
@@ -422,12 +315,18 @@ gg_race_points <- function(x, y, time, hrtRt, id,
       ggMap <- ggMap + geom_point(data = df_pt, 
                          aes(x = lon, y = lat,
                              frame = time, 
-                             cumulative = TRUE),
-                         col = df_pt$hrCol, 
+                             cumulative = TRUE,
+                             col = HeartRate),
                          size = 3, 
-                         pch = pt_type)
+                         pch = pt_type) +
+        labs(x = "Longitude", y = "Latitude")
     }
   }
+  
+  ggMap <- ggMap + scale_color_manual(name = 'Heart Rate', 
+                                      values = sort(getHR_cols(hrCuts)),
+                                      breaks = getHR_cols(hrCuts), 
+                                      labels = names(hrCuts)) 
   return(ggMap)
 }
   
