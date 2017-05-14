@@ -135,6 +135,10 @@ ls_approx <- function(x, y, eval_pts){
 #' @param map_type Type of map pulled from google maps
 #' @param nudgeLatBy How much should each subject's latitude be moved by? 
 #' @param nudgeLonBy How much should each subject's longitude be moved by?
+#' @param timeName Column name of timestamp in record
+#' @param latName Column name of latitude in record
+#' @param lonName Column name of longitude in record
+#' @param hrName  Column name of heart rate in record
 #' @details 
 #' Returns a ggplot object with the work out plotted on top of it. This can be animated
 #' by using \code{gganimate::gganimate(hrMap)}, where \code{hrMap} is an object returned by heartRace. 
@@ -143,7 +147,11 @@ heartRace <- function(recordList,
                       zoom = 14, 
                       map_type = 'satellite', 
                       nudgeLatBy = 0,
-                      nudgeLonBy = 0
+                      nudgeLonBy = 0,
+                      timeName = 'timestamp',
+                      latName = "position_lat",
+                      lonName = "position_long",
+                      hrName  = "heart_rate"
                       ){
   lon  = NULL
   lat  = NULL 
@@ -155,21 +163,21 @@ heartRace <- function(recordList,
   if(is.null(ids)) ids = seq_along(recordList)
   for(i in seq_along(ids)){
     this_id = as.character( ids[i] )
-    this_data <- recordList[[i]][,c("timestamp", 
-                                     "position_lat", 
-                                     "position_long",
-                                     "heart_rate")]
+    this_data <- recordList[[i]][,c(timeName, 
+                                     latName, 
+                                     lonName,
+                                     hrName)]
     drop <- rowSums(is.na(this_data)) > 0
     this_data <- this_data[!drop, ]
     nvals <- nrow(this_data)
-    this_time <- this_data$timestamp
+    this_time <- this_data[[timeName]]
     this_time <- this_time - min(this_time)
     time <- c(time, this_time)
-    this_lon =  this_data$position_long + (nudgeLonBy * (i - 1))
+    this_lon =  this_data[[lonName]] + (nudgeLonBy * (i - 1))
     lon  <- c(lon, this_lon)  
-    this_lat = this_data$position_lat + (nudgeLatBy * (i - 1))
+    this_lat = this_data[[latName]] + (nudgeLatBy * (i - 1))
     lat  <- c(lat, this_lat) 
-    hr   <- c(hr, this_data$heart_rate)
+    hr   <- c(hr, this_data[[hrName]])
     id   <- c(id, rep(this_id, nvals))
   }
   pos <- c(lon = mean(lon),

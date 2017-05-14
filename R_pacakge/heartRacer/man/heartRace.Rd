@@ -5,7 +5,8 @@
 \title{Animate fit files onto google maps}
 \usage{
 heartRace(recordList, zoom = 14, map_type = "satellite", nudgeLatBy = 0,
-  nudgeLonBy = 0)
+  nudgeLonBy = 0, timeName = "timestamp", latName = "position_lat",
+  lonName = "position_long", hrName = "heart_rate")
 }
 \arguments{
 \item{recordList}{A list of records from fit file}
@@ -17,6 +18,14 @@ heartRace(recordList, zoom = 14, map_type = "satellite", nudgeLatBy = 0,
 \item{nudgeLatBy}{How much should each subject's latitude be moved by?}
 
 \item{nudgeLonBy}{How much should each subject's longitude be moved by?}
+
+\item{timeName}{Column name of timestamp in record}
+
+\item{latName}{Column name of latitude in record}
+
+\item{lonName}{Column name of longitude in record}
+
+\item{hrName}{Column name of heart rate in record}
 }
 \description{
 Animate fit files onto google maps
