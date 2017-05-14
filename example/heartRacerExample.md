@@ -33,13 +33,10 @@ Making the plots.
 ani_plot <- heartRace(recordList = record_list,
                       zoom = 11, 
                       map_type = 'satellite')
-```
 
-```
-## Warning: Ignoring unknown aesthetics: frame, cumulative
-```
+# There are some warnings regarding unknown aesthetic
+# These are a result of using gganimate
 
-```r
 # Plotting
 animation <- gganimate(ani_plot, 
                        filename = "heartRacerAnimation.gif",

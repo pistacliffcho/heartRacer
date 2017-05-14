@@ -390,44 +390,44 @@ gg_race_points <- function(x, y, time, hrtRt, id,
     grd_vals[[i]] <- this_data
   }
   
-  full_data <- grd_vals[[1]]
-  if(length(grd_vals) > 1){
-    for(i in 2:length(grd_vals)){
-      full_data <- rbind(full_data, grd_vals[[i]])
+  # full_data <- grd_vals[[1]]
+  # if(length(grd_vals) > 1){
+  #   for(i in 2:length(grd_vals)){
+  #     full_data <- rbind(full_data, grd_vals[[i]])
+  #   }
+  # }
+  # hasNA <- rowSums(is.na(full_data)) > 0
+  for(i in seq_along(grd_vals)){
+    df <- grd_vals[[i]]
+    hasNA <- rowSums(is.na(df)) > 0
+    df <- df[!hasNA,]
+    lon_end <- df$lon[-1]
+    lat_end <- df$lat[-1]
+    df <- df[-nrow(df), ]
+    df$lon_end <- lon_end
+    df$lat_end <- lat_end
+    ggMap <- ggMap + 
+              geom_segment(data = df, 
+                          aes(x = lon, xend = lon_end, 
+                              y = lat, yend = lat_end,
+                              frame = time,
+                              cumulative = TRUE),
+                         col = df$hrCol, 
+                         size = 1.5) 
+    pts_delay = 20
+    if(nrow(df) > pts_delay){
+      keep_ind <- 1:(floor(nrow(df) / pts_delay)) * pts_delay
+      df_pt <- df[keep_ind, ]
+      pt_type <- i + 15
+      ggMap <- ggMap + geom_point(data = df_pt, 
+                         aes(x = lon, y = lat,
+                             frame = time, 
+                             cumulative = TRUE),
+                         col = df_pt$hrCol, 
+                         size = 3, 
+                         pch = pt_type)
     }
   }
-  hasNA <- rowSums(is.na(full_data)) > 0
-  df <- full_data[!hasNA, ]
-  ggMap <- ggMap + 
-            geom_point(data = df, 
-                        aes(x = lon, 
-                            y = lat, 
-                            frame = time,
-                            cumulative = TRUE),
-                       col = df$hrCol, 
-                       pch = as.numeric(factor(df$id)) + 15,
-                       size = 3) 
   return(ggMap)
-  
-  # 
-  # saveHTML(movie.name = "~/Documents/heartRace.html", expr = {
-  #   ani.options(interval = 0.1, nmax = length(grid))
-  #   
-  #   for(i in seq_along(grid)){
-  #     this_map <- ggMap
-  #     for(j in seq_along(unq_id)){
-  #       df <- grd_vals[[j]][i,]
-  #       this_map <- add_gg_run(this_map, df, size = 2)
-  #       if(i > 10){
-  #         p_max_ind = floor(i / 10)
-  #         p_inds <- 1:p_max_ind * 10
-  #         df <- df[p_inds,]
-  #         this_map <- add_gg_run(this_map, df, size = 4, pch = j)
-  #       }
-  #     }
-  #     this_map
-  #     ani.pause()
-  #   }
-  # })
 }
   

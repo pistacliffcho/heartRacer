@@ -30,11 +30,14 @@ record_list$ride2 <- ride2$record
 
 Making the plots. 
 
-```{r, fig.show = 'animate', message = F}
+```{r, fig.show = 'animate', message = F, warning = F}
 # Creating animation
 ani_plot <- heartRace(recordList = record_list,
                       zoom = 11, 
                       map_type = 'satellite')
+
+# There are some warnings regarding unknown aesthetic
+# These are a result of using gganimate
 
 # Plotting
 animation <- gganimate(ani_plot, 
